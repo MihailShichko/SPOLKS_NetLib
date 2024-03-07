@@ -13,7 +13,7 @@ namespace SPOLKS_NetLib.Data.Requests
         public List<string>? Flags { get; set; }
         public List<string>? Arguments { get; set; }
 
-        public CommandLineRequest(RequestType requestType) :base(requestType)
+        public CommandLineRequest() :base(RequestType.CommandLineRequest)
         {
         
         }

@@ -13,7 +13,7 @@ namespace SPOLKS_NetLib.Parsing
         public Request Parse(string message)
         {
             var regex = new Regex("^\\w+");
-            var request = new CommandLineRequest(RequestType.CommandLineRequest);
+            var request = new CommandLineRequest();
             request.CommandName = regex.Match(message).Value;
             regex = new Regex("-\\w");
             foreach (Match flag in regex.Matches(message))

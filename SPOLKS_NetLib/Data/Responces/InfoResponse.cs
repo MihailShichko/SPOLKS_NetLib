@@ -10,7 +10,7 @@ namespace SPOLKS_NetLib.Data.Responces
     public class InfoResponse: Response
     {
         public string Info { get;}
-        InfoResponse(ResponseType type, string info) : base(type)
+        InfoResponse(string info) : base(ResponseType.InfoResponce)
         {
             this.Info = info;
         }

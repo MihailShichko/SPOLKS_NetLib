@@ -32,16 +32,19 @@ namespace SPOLKS_NetLib.Severs
         protected override async void HandleConnection(TcpClient client)
         {
             var reader = new StreamReader(client.GetStream());
-            while (!client.Connected)
+            while (client.Connected)
             {
-                var request = await JsonSerializer.DeserializeAsync<Request>(reader.BaseStream);
+                string asd = reader.ReadLine();
+                Console.WriteLine(asd);
+                /*var request = await JsonSerializer.DeserializeAsync<Request>(asd);
                 switch (request.GetType())
                 {
                     case Type t when t == typeof(CommandLineRequest):
                         CommandLineRequest r = (CommandLineRequest)request;
                         HandleCommandLineRequest(client, r);
                         break;
-                }
+                }*/
+                if (client.Client.Poll(1000, SelectMode.SelectRead)) break;
             }
 
         }
