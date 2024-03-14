@@ -2,20 +2,32 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace SPOLKS_NetLib.Data
 {
-    public abstract class Response
+    //https://github.com/manuc66/JsonSubTypes
+    [DataContract]
+    [KnownType(typeof(InfoResponse))]
+    [KnownType(typeof(DownloadResponse))]
+    [KnownType(typeof(ErrorResponse))]
+    [KnownType(typeof(UploadResponse))]
+    public class Response
     {
-        public ResponseType ResponseType { get; }
+        [DataMember]
+        public ResponseType ResponseType { get; set; }
 
         public Response(ResponseType responseType)
         {
             this.ResponseType = responseType;
         }
 
-        public abstract string Serialize();
+        public virtual string Serialize()
+        {
+            return this.Serialize();
+        }
     }
 }

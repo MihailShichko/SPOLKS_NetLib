@@ -6,8 +6,13 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using System.Text.Json;
 using SPOLKS_NetLib.Data.Requests;
+using SPOLKS_NetLib.Data.Responces;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using SPOLKS_NetLib.Data.Requests.JsonConverters;
+using System.Reflection.PortableExecutable;
+using ShellProgressBar;
 
 namespace SPOLKS_NetLib.Severs
 {
@@ -24,60 +29,100 @@ namespace SPOLKS_NetLib.Severs
             while (true)
             {
                 var client = this.ecoSystem.listener.AcceptTcpClient();
-                Console.WriteLine($"Client connected {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
+                if(((IPEndPoint)client.Client.RemoteEndPoint).Address != ecoSystem.lastClient)
+                {
+                    ecoSystem.ClearTempData();
+                    ecoSystem.lastClient = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
+                }
+
+                ecoSystem.lastClient = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
+                Console.WriteLine($"Client connected {ecoSystem.lastClient}");
                 HandleConnection(client);
             }
         }
 
-        protected override async void HandleConnection(TcpClient client)
+        protected override void HandleConnection(TcpClient client)
         {
-            var reader = new StreamReader(client.GetStream());
-            while (client.Connected)
+            try
             {
-                string asd = reader.ReadLine();
-                Console.WriteLine(asd);
-                /*var request = await JsonSerializer.DeserializeAsync<Request>(asd);
-                switch (request.GetType())
+                var reader = new StreamReader(client.GetStream());
+                var settings = new JsonSerializerSettings();
+                settings.Converters.Add(new JsonRequestConverter());
+                while (client.Connected)
                 {
-                    case Type t when t == typeof(CommandLineRequest):
-                        CommandLineRequest r = (CommandLineRequest)request;
-                        HandleCommandLineRequest(client, r);
-                        break;
-                }*/
-                if (client.Client.Poll(1000, SelectMode.SelectRead)) break;
+
+                    var request = JsonConvert.DeserializeObject<Request>(reader.ReadLine(), settings);
+                    if(request is CommandLineRequest commandLineRequest)
+                    {
+                        HandleCommandLineRequest(client, commandLineRequest);
+                    }
+                    else if(request is UploadRequest uploadRequest)
+                    {
+                        HandleUploadRequest(client, uploadRequest);
+                    }
+                    
+                }
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"Client {((IPEndPoint)client.Client.RemoteEndPoint).Address} disconnected");
+                return;
+            }
+        }
+
+        private void HandleUploadRequest(TcpClient client, UploadRequest uploadRequest)
+        {
+            if (uploadRequest.Position == 0)
+            {
+                using (var fileStream = new FileStream(new string(ecoSystem.storage.FullName + "\\" + uploadRequest.FileName), FileMode.Create, FileAccess.Write))
+                {
+                    var reader = new StreamReader(client.GetStream());
+
+                    byte[] buffer = new byte[1024];
+                    long totalBytesRead = 0;
+                    int bytesRead;
+                    while (totalBytesRead < uploadRequest.FileSize && (bytesRead = reader.BaseStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        fileStream.Write(buffer, 0, bytesRead);
+                        ecoSystem.LastUploadedData += bytesRead;
+                    }
+                }
+            }
+            else
+            {
+                using (var fileStream = new FileStream(new string(ecoSystem.storage.FullName + "\\" + uploadRequest.FileName), FileMode.Open, FileAccess.Write))
+                {
+                    var reader = new StreamReader(client.GetStream());
+
+                    fileStream.Seek(uploadRequest.Position, SeekOrigin.Begin);
+
+                    byte[] buffer = new byte[1024];
+                    long totalBytesRead = 0;
+                    int bytesRead;
+                    while (totalBytesRead < uploadRequest.FileSize && (bytesRead = reader.BaseStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        fileStream.Write(buffer, 0, bytesRead);
+                        ecoSystem.LastUploadedData += bytesRead;
+                    }
+                }
             }
 
+            ecoSystem.LastUploadedData = 0;
         }
 
         private void HandleCommandLineRequest(TcpClient client, CommandLineRequest request)
         {
-            Commands[request.CommandName].Invoke(client, request, this.ecoSystem);
-        }
-
-        private void sendFile(string fileName, TcpClient client)
-        {
-            BinaryWriter writer = new BinaryWriter(client.GetStream());
-            using (var fileStream = new FileStream(new string(this.ecoSystem.storage.FullName + "\\" + fileName), FileMode.Open, FileAccess.Read))
+            try
             {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                int bytesReadTotally = 0;
-                int offset;
-                offset = ConnectionsData[((IPEndPoint)client.Client.RemoteEndPoint).Address];
-                fileStream.Seek(offset, SeekOrigin.Begin);
-                while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    if (client.Client.Poll(1000, SelectMode.SelectRead))
-                    {
-                        Console.WriteLine($"Client {0} disconnected", ((IPEndPoint)client.Client.RemoteEndPoint).Address);
-                        return;
-                    }
-
-                    bytesReadTotally += bytesRead;
-                    ConnectionsData[((IPEndPoint)client.Client.RemoteEndPoint).Address] = bytesReadTotally;
-                    writer.Write(buffer, 0, bytesRead);
-
-                }
+                Commands[request.CommandName].Invoke(client, request, this.ecoSystem);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                var writer = new StreamWriter(client.GetStream());
+                writer.AutoFlush = true;
+                var response = new ErrorResponse("Server does not support this command");
+                writer.WriteLine(response.Serialize());
+                return;
             }
         }
 

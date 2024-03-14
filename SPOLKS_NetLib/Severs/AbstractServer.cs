@@ -19,12 +19,25 @@ namespace SPOLKS_NetLib.Severs
             public readonly IParser parser;
 
             public readonly TcpListener listener;
+
+            public Dictionary<IPAddress, int> ConnectionsData = new Dictionary<IPAddress, int>();
             
+            public IPAddress lastClient = null; 
+            
+            public int LastUploadedData = 0;
+
+            public int LastDownloadedData = 0;
             public ServerEcoSystem(DirectoryInfo storage, IParser parser, TcpListener listener)
             {
                 this.storage = storage;
                 this.parser = parser;
                 this.listener = listener;
+            }
+
+            public void ClearTempData()
+            {
+                LastDownloadedData = 0;
+                LastUploadedData = 0;
             }
         }
 

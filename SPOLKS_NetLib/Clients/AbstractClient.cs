@@ -18,8 +18,16 @@ namespace SPOLKS_NetLib.Clients
 
         public void Connect(IPAddress ip, int port)
         {
-            client.Connect(ip, port);
-            HandleConnection();
+            try
+            {
+                client.Connect(ip, port);
+                HandleConnection();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
         }
 
         protected abstract void HandleConnection();

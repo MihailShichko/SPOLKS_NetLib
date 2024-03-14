@@ -1,21 +1,32 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using SPOLKS_NetLib.Data.Responces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
+using System.Net.Http.Headers;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
 namespace SPOLKS_NetLib.Data.Requests
 {
-    public abstract class Request
+    [DataContract]
+    [KnownType(typeof(CommandLineRequest))]
+    [KnownType(typeof(UploadRequest))]
+    public class Request
     {
+        [DataMember]
         public RequestType RequestType { get;}
+
+        [JsonConstructor]
         public Request(RequestType requestType)
         {
             this.RequestType = requestType;
         }
 
-        public abstract string Serialize();
+        public virtual string Serialize()
+        {
+            return this.Serialize();
+        }
         
     }
 }

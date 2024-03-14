@@ -8,7 +8,9 @@ namespace SPOLKS_NetLib.Data.Responces
 {
     public enum ResponseType
     {
-        InfoResponce = 0,
-
+        InfoResponse = 0,
+        DownloadResponse = 1,
+        ErrorResponse = 2,
+        UploadResponse = 3,
     }
 }

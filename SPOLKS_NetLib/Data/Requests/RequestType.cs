@@ -8,6 +8,7 @@ namespace SPOLKS_NetLib.Data.Requests
 {
     public enum RequestType
     {
-        CommandLineRequest = 0
+        CommandLineRequest = 0,
+        UploadRequest = 1
     }
 }

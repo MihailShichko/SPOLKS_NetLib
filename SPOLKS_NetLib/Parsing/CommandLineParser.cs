@@ -21,7 +21,7 @@ namespace SPOLKS_NetLib.Parsing
                 request.Flags.Add(flag.Value);
             }
 
-            regex = new Regex(" \\w+");
+            regex = new Regex(" [a-zA-Z0-9.\\/ \\\\:_,]+");
             foreach (Match arg in regex.Matches(message))
             {
                 request.Arguments.Add(arg.Value.Substring(1));

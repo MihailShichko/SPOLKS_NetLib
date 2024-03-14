@@ -3,25 +3,29 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SPOLKS_NetLib.Data.Requests
 {
     [DataContract]
-    public class CommandLineRequest: Request
+    public class UploadRequest: Request
     {
         [DataMember]
-        public string? CommandName { get; set; }
+        public string FileName { get; }
+
         [DataMember]
-        public List<string>? Flags { get; set; }
+        public int FileSize { get; }
+
         [DataMember]
-        public List<string>? Arguments { get; set; }
+        public int Position { get; }
 
         [JsonConstructor]
-        public CommandLineRequest() :base(RequestType.CommandLineRequest)
+        public UploadRequest(string filename, int fileSize, int position) : base(RequestType.UploadRequest)
         {
-            Flags = new List<string>();
-            Arguments = new List<string>();
+            this.FileName = filename;
+            this.FileSize = fileSize;
+            this.Position = position;
         }
 
         public override string Serialize()

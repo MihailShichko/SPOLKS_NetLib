@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using SPOLKS_NetLib.Data.Responces.JsonConverters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,21 +8,21 @@ using System.Threading.Tasks;
 
 namespace SPOLKS_NetLib.Data.Responces
 {
-    [DataContract]
-    public class InfoResponse: Response
+    public class ErrorResponse : Response
     {
         [DataMember]
-        public string Info { get; set; }
-
+        public string ErrorMessage { get; }
+        
         [JsonConstructor]
-        public InfoResponse(string info) : base(ResponseType.InfoResponse)
+        public ErrorResponse(string ErrorMessage) : base(ResponseType.ErrorResponse)
         {
-            this.Info = info;
+            this.ErrorMessage = ErrorMessage;
         }
 
         public override string Serialize()
         {
             return JsonConvert.SerializeObject(this);
         }
+
     }
 }
