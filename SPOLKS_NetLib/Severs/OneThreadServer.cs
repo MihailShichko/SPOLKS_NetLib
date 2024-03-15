@@ -29,13 +29,13 @@ namespace SPOLKS_NetLib.Severs
             while (true)
             {
                 var client = this.ecoSystem.listener.AcceptTcpClient();
-                if(((IPEndPoint)client.Client.RemoteEndPoint).Address != ecoSystem.lastClient)
+                if(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString() != ecoSystem.lastClient)//ne sravnivaet
                 {
                     ecoSystem.ClearTempData();
-                    ecoSystem.lastClient = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
+                    ecoSystem.lastClient = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                 }
 
-                ecoSystem.lastClient = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
+                ecoSystem.lastClient = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                 Console.WriteLine($"Client connected {ecoSystem.lastClient}");
                 HandleConnection(client);
             }

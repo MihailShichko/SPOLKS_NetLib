@@ -90,7 +90,7 @@ namespace SPOLKS_NetLib.Clients
                         using (var progressBar = new ProgressBar((int)downloadResponse.DataSize, "Progress", options))
                         {
                             byte[] buffer = new byte[1024];
-                            long totalBytesRead = 0;
+                            long totalBytesRead = downloadResponse.Position;
                             int bytesRead;
                             while (totalBytesRead < downloadResponse.DataSize && (bytesRead = reader.BaseStream.Read(buffer, 0, buffer.Length)) > 0)
                             {

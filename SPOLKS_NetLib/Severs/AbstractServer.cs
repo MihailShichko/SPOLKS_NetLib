@@ -22,7 +22,7 @@ namespace SPOLKS_NetLib.Severs
 
             public Dictionary<IPAddress, int> ConnectionsData = new Dictionary<IPAddress, int>();
             
-            public IPAddress lastClient = null; 
+            public string lastClient = "bruh"; 
             
             public int LastUploadedData = 0;
 
