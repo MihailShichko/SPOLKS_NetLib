@@ -29,7 +29,8 @@ namespace SPOLKS_NetLib.Data.Responces.JsonConverters
                 var dataSize = jsonObject["DataSize"].Value<int>();
                 var fileName = jsonObject["FileName"].Value<string>();
                 var position = jsonObject["Position"].Value<int>();
-                return new DownloadResponse(fileName, dataSize, position);
+                var protocol = jsonObject["Protocol"].Value<int>(); 
+                return new DownloadResponse(fileName, dataSize, position, (Protocol)protocol);
             }
             else if (responseType == ResponseType.ErrorResponse)
             {
@@ -40,7 +41,8 @@ namespace SPOLKS_NetLib.Data.Responces.JsonConverters
             {
                 var filePath = jsonObject["FilePath"].Value<string>();
                 var position = jsonObject["Position"].Value<int>();
-                return new UploadResponse(filePath, position);
+                var protocol = jsonObject["Protocol"].Value<int>();
+                return new UploadResponse(filePath, position, (Protocol)protocol);
             }
 
             throw new JsonSerializationException($"Unsupported response type: {responseType}");
@@ -60,6 +62,7 @@ namespace SPOLKS_NetLib.Data.Responces.JsonConverters
                 jsonObject.Add("DataSize", downloadResponse.DataSize);
                 jsonObject.Add("FileName", downloadResponse.FileName);
                 jsonObject.Add("Position", downloadResponse.Position);
+                jsonObject.Add("Protocol", downloadResponse.Protocol.ToString());
             }
             else if(value is ErrorResponse errorResponse)
             {
@@ -69,6 +72,7 @@ namespace SPOLKS_NetLib.Data.Responces.JsonConverters
             {
                 jsonObject.Add("FilePath", uploadResponse.FilePath);
                 jsonObject.Add("Position", uploadResponse.Position);
+                jsonObject.Add("Protocol", uploadResponse.Protocol.ToString());
             }
 
             jsonObject.WriteTo(writer);

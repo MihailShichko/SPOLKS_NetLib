@@ -12,6 +12,8 @@ namespace SPOLKS_NetLib.Severs
 {
     public abstract class AbstractServer
     {
+        public int Port { get; }
+        public IPAddress Address { get; }
         public class ServerEcoSystem
         {
             public readonly DirectoryInfo storage;
@@ -52,6 +54,8 @@ namespace SPOLKS_NetLib.Severs
         /// <param name="port">Port.</param>
         public AbstractServer(DirectoryInfo storage, IParser parser, IPAddress ip, int port)
         {
+            this.Port = port;
+            this.Address = ip;
             ecoSystem = new ServerEcoSystem(storage, parser, new TcpListener(ip, port));
         }
 

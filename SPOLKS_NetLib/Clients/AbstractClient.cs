@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ShellProgressBar;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -11,8 +12,20 @@ namespace SPOLKS_NetLib.Clients
     public abstract class AbstractClient
     {
         protected readonly TcpClient client;
+
+        protected ProgressBarOptions options;
+
+        protected IPAddress ip;
+
+        protected int port;
         public AbstractClient()
-        { 
+        {
+            this.options = new ProgressBarOptions
+            {
+                ProgressCharacter = '#',
+                ProgressBarOnBottom = true
+            };
+
             client = new TcpClient();
         }
 
@@ -21,6 +34,8 @@ namespace SPOLKS_NetLib.Clients
             try
             {
                 client.Connect(ip, port);
+                this.ip = ip;
+                this.port = port;
                 HandleConnection();
             }
             catch(Exception ex)

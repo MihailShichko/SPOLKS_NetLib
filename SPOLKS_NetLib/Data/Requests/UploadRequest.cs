@@ -20,12 +20,16 @@ namespace SPOLKS_NetLib.Data.Requests
         [DataMember]
         public int Position { get; }
 
+        [DataMember]
+        public Protocol Protocol { get; }
+
         [JsonConstructor]
-        public UploadRequest(string filename, int fileSize, int position) : base(RequestType.UploadRequest)
+        public UploadRequest(string filename, int fileSize, int position, Protocol protocol) : base(RequestType.UploadRequest)
         {
             this.FileName = filename;
             this.FileSize = fileSize;
             this.Position = position;
+            this.Protocol = protocol;
         }
 
         public override string Serialize()

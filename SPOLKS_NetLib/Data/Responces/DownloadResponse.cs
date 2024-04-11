@@ -21,12 +21,16 @@ namespace SPOLKS_NetLib.Data.Responces
         [DataMember]
         public int Position { get; }
 
+        [DataMember]
+        public Protocol Protocol { get; }
+
         [JsonConstructor]
-        public DownloadResponse(string FileName, int DataSize, int position) : base(ResponseType.DownloadResponse)
+        public DownloadResponse(string FileName, int DataSize, int position, Protocol protocol) : base(ResponseType.DownloadResponse)
         {
             this.DataSize = DataSize; 
             this.FileName = FileName;
             this.Position = position;
+            this.Protocol = protocol;
         }
 
         public override string Serialize()

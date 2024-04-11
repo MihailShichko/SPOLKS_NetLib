@@ -35,7 +35,8 @@ namespace SPOLKS_NetLib.Data.Requests.JsonConverters
                 var filename = jsonObject["FileName"].Value<string>();
                 var filesize = jsonObject["FileSize"].Value<int>();
                 var position = jsonObject["Position"].Value<int>();
-                return new UploadRequest(filename, filesize, position);
+                var protocol = jsonObject["Protocol"].Value<int>();
+                return new UploadRequest(filename, filesize, position, (Protocol)protocol);
             }
 
             throw new JsonSerializationException($"Unsupported response type: {requestType}");
@@ -57,6 +58,7 @@ namespace SPOLKS_NetLib.Data.Requests.JsonConverters
                 jsonObject.Add("FileName", uploadRequest.FileName);
                 jsonObject.Add("FileSize", uploadRequest.FileSize);
                 jsonObject.Add("Position", uploadRequest.Position);
+                jsonObject.Add("Protocol", uploadRequest.Protocol.ToString());
             }
            
 

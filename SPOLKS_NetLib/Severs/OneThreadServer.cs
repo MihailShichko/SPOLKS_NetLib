@@ -13,6 +13,8 @@ using Newtonsoft.Json;
 using SPOLKS_NetLib.Data.Requests.JsonConverters;
 using System.Reflection.PortableExecutable;
 using ShellProgressBar;
+using SPOLKS_NetLib.Data;
+using SPOLKS_NetLib.Clients;
 
 namespace SPOLKS_NetLib.Severs
 {
@@ -29,10 +31,10 @@ namespace SPOLKS_NetLib.Severs
             while (true)
             {
                 var client = this.ecoSystem.listener.AcceptTcpClient();
-                if(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString() != ecoSystem.lastClient)//ne sravnivaet
+                if(((IPEndPoint?)client.Client.RemoteEndPoint)?.Address.ToString() != ecoSystem.lastClient)//ne sravnivaet
                 {
                     ecoSystem.ClearTempData();
-                    ecoSystem.lastClient = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                    ecoSystem.lastClient = ((IPEndPoint?)client.Client.RemoteEndPoint).Address.ToString();
                 }
 
                 ecoSystem.lastClient = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
@@ -58,7 +60,14 @@ namespace SPOLKS_NetLib.Severs
                     }
                     else if(request is UploadRequest uploadRequest)
                     {
-                        HandleUploadRequest(client, uploadRequest);
+                        if (uploadRequest.Protocol == Protocol.TCP)
+                        {
+                            HandleTCPUploadRequest(client, uploadRequest);
+                        }
+                        else
+                        {
+                            HandleUDPUploadRequest(client, uploadRequest);
+                        }
                     }
                     
                 }
@@ -70,7 +79,58 @@ namespace SPOLKS_NetLib.Severs
             }
         }
 
-        private void HandleUploadRequest(TcpClient client, UploadRequest uploadRequest)
+        private void HandleUDPUploadRequest(TcpClient client, UploadRequest uploadRequest)
+        {
+            UdpClient receiver = new UdpClient(Port);
+            IPEndPoint endPoint = new IPEndPoint(Address, Port);
+            IPEndPoint clientEndPoint = null;
+            if (uploadRequest.Position == 0)
+            {
+                using (var fileStream = new FileStream(new string(ecoSystem.storage.FullName + "\\" + uploadRequest.FileName), FileMode.Create, FileAccess.Write))
+                {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while (true)
+                    {
+                        buffer = receiver.Receive(ref clientEndPoint);
+                        if(buffer.Length == 0)
+                        {
+                            break;
+                        }
+
+                        fileStream.Write(buffer, 0, buffer.Length);
+                        ecoSystem.LastDownloadedData += buffer.Length;
+                        if (buffer.Length < 1024) break;
+                    }
+                }
+            }
+            else
+            {
+                using (var fileStream = new FileStream(new string(ecoSystem.storage.FullName + "\\" + uploadRequest.FileName), FileMode.Open, FileAccess.Write))
+                {
+                    fileStream.Seek(uploadRequest.Position, SeekOrigin.Begin);
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while (true)
+                    {
+                        buffer = receiver.Receive(ref clientEndPoint);
+                        if (buffer.Length == 0)
+                        {
+                            break;
+                        }
+
+                        fileStream.Write(buffer, 0, buffer.Length);
+                        ecoSystem.LastDownloadedData += buffer.Length;
+                        if (buffer.Length < 1024) break;
+                    }
+
+                }
+            }
+
+            ecoSystem.LastUploadedData = 0;
+        }
+
+        private void HandleTCPUploadRequest(TcpClient client, UploadRequest uploadRequest)
         {
             if (uploadRequest.Position == 0)
             {

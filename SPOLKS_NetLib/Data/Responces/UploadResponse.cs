@@ -17,11 +17,15 @@ namespace SPOLKS_NetLib.Data.Responces
         [DataMember]
         public int Position { get; }
 
+        [DataMember]
+        public Protocol Protocol { get; }
+
         [JsonConstructor]
-        public UploadResponse(string filePath, int position) : base(ResponseType.UploadResponse)
+        public UploadResponse(string filePath, int position, Protocol protocol) : base(ResponseType.UploadResponse)
         {
             FilePath = filePath;
             Position = position;
+            Protocol = protocol;
         }
 
         public override string Serialize()
