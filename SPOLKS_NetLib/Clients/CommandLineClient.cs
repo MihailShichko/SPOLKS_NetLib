@@ -12,6 +12,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Reflection.PortableExecutable;
@@ -130,28 +131,38 @@ namespace SPOLKS_NetLib.Clients
         {
             UdpClient receiver = new UdpClient(port);
             IPEndPoint serverEndPoint = null;
-
+            int pollingTimeoutMilliSec = 5000;
             if (downloadResponse.Position == 0)
             {
                 using (var file = new FileStream(downloadResponse.FileName, FileMode.Create, FileAccess.Write))
                 {
                     using (var progressBar = new ProgressBar((int)downloadResponse.DataSize, "Progress", options))
                     {
-                        byte[] buffer = new byte[1024];
-                        long totalBytesRead = 0;
+                        long totalBytesRead = downloadResponse.Position;
                         while (true)
                         {
-                            buffer = receiver.Receive(ref serverEndPoint);
-                            Datagram datagram = JsonConvert.DeserializeObject<Datagram>(buffer.ToString());
-                            if (datagram.Data.Length == 0)
+                         
+                            byte[] buffer = receiver.Receive(ref serverEndPoint);
+                           
+                            Datagram datagram = JsonConvert.DeserializeObject<Datagram>(Encoding.ASCII.GetString(buffer));
+                            if (datagram.IsLastDatagramm) break;
+                            
+                            totalBytesRead += datagram.Data.Length;
+                            progressBar.Tick((int)totalBytesRead);
+                            datagrams.Add(datagram);
+                            if (!receiver.Client.Poll(pollingTimeoutMilliSec * 1000, SelectMode.SelectRead))
                             {
+                                Console.WriteLine("Timeout");
                                 break;
                             }
+                        }
 
-                            file.Write(buffer, 0, buffer.Length);
-                            totalBytesRead += buffer.Length;
+                        datagrams.Sort((d1, d2) => d1.SequenceNumber.CompareTo(d2.SequenceNumber));
+                        foreach (var d in datagrams)
+                        {
+                            file.Write(d.Data, 0, d.Data.Length);
+                            totalBytesRead += d.Data.Length;
                             progressBar.Tick((int)totalBytesRead);
-                            if (buffer.Length < 1024) break;
                         }
                     }
                 }
@@ -163,25 +174,34 @@ namespace SPOLKS_NetLib.Clients
                     file.Seek(downloadResponse.Position, SeekOrigin.Begin);
                     using (var progressBar = new ProgressBar((int)downloadResponse.DataSize, "Progress", options))
                     {
-                        byte[] buffer = new byte[1024];
                         long totalBytesRead = downloadResponse.Position;
                         while (true)
-                        {
-                            buffer = receiver.Receive(ref serverEndPoint);
-                            if (buffer.Length == 0)
+                        { 
+                            byte[] buffer = receiver.Receive(ref serverEndPoint);
+                            Datagram datagram = JsonConvert.DeserializeObject<Datagram>(Encoding.ASCII.GetString(buffer));
+                            if (datagram.IsLastDatagramm) break;
+                           
+                            datagrams.Add(datagram);
+                            if (!receiver.Client.Poll(pollingTimeoutMilliSec * 1000, SelectMode.SelectRead))
                             {
+                                Console.WriteLine("Timeout");
                                 break;
                             }
+                        }
 
-                            file.Write(buffer, 0, buffer.Length);
-                            totalBytesRead += buffer.Length;
+                        datagrams.Sort((d1, d2) => d1.SequenceNumber.CompareTo(d2.SequenceNumber));
+                        foreach(var d in datagrams)
+                        {
+                            file.Write(d.Data, 0, d.Data.Length);
+                            totalBytesRead += d.Data.Length;
                             progressBar.Tick((int)totalBytesRead);
-                            if (buffer.Length < 1024) break;
                         }
                     }
                 }
             }
 
+            receiver.Close();
+            datagrams.Clear();
             Console.WriteLine("Done");
         }
 
@@ -200,18 +220,31 @@ namespace SPOLKS_NetLib.Clients
                 writer.WriteLine(new UploadRequest(Path.GetFileName(fileStream.Name), (int)fileSize, uploadResponse.Position, Protocol.UDP).Serialize());
                 
                 Thread.Sleep(1000);
-
+                int pollingTimeoutMilliSec = 5000;
                 using (var progressBar = new ProgressBar((int)fileSize, "Progress", options))
                 {
                     byte[] buffer = new byte[1024];
                     int totalBytes = uploadResponse.Position;
                     int bytesRead;
+                    int sequeneceNumber = 1;
                     while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) > 0)
                     {
-                        sender.Send(buffer, bytesRead, serverEndPoint);
+                        Datagram datagram = new Datagram(buffer, sequeneceNumber, false);
+                        sender.Send(Encoding.ASCII.GetBytes(datagram.Serialize()), serverEndPoint);
+                        Thread.Sleep(1);
                         totalBytes += bytesRead;
                         progressBar.Tick(totalBytes);
+                        sequeneceNumber++;
+                        if (!sender.Client.Poll(pollingTimeoutMilliSec * 1000, SelectMode.SelectWrite))
+                        {
+                            Console.WriteLine("Timeout");
+                            break;
+                        }
                     }
+
+                    var lastDatagram = new Datagram(null, -1, true);
+                    sender.Send(Encoding.ASCII.GetBytes(lastDatagram.Serialize()), serverEndPoint);
+                    sender.Close();
                 }
             }
         }

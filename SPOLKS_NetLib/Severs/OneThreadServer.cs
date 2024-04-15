@@ -88,19 +88,20 @@ namespace SPOLKS_NetLib.Severs
             {
                 using (var fileStream = new FileStream(new string(ecoSystem.storage.FullName + "\\" + uploadRequest.FileName), FileMode.Create, FileAccess.Write))
                 {
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
+                   
                     while (true)
                     {
-                        buffer = receiver.Receive(ref clientEndPoint);
-                        if(buffer.Length == 0)
-                        {
-                            break;
-                        }
+                        byte[] buffer = receiver.Receive(ref clientEndPoint);
+                        Datagram datagram = JsonConvert.DeserializeObject<Datagram>(Encoding.ASCII.GetString(buffer));
+                        if (datagram.IsLastDatagramm) break;
+                        datagrams.Add(datagram);
+                    }
 
-                        fileStream.Write(buffer, 0, buffer.Length);
-                        ecoSystem.LastDownloadedData += buffer.Length;
-                        if (buffer.Length < 1024) break;
+                    datagrams.Sort((d1, d2) => d1.SequenceNumber.CompareTo(d2.SequenceNumber));
+                    foreach (var d in datagrams)
+                    {
+                        fileStream.Write(d.Data, 0, d.Data.Length);
+                        ecoSystem.LastDownloadedData += d.Data.Length;
                     }
                 }
             }
@@ -109,24 +110,29 @@ namespace SPOLKS_NetLib.Severs
                 using (var fileStream = new FileStream(new string(ecoSystem.storage.FullName + "\\" + uploadRequest.FileName), FileMode.Open, FileAccess.Write))
                 {
                     fileStream.Seek(uploadRequest.Position, SeekOrigin.Begin);
-                    byte[] buffer = new byte[1024];
                     int bytesRead;
                     while (true)
                     {
-                        buffer = receiver.Receive(ref clientEndPoint);
-                        if (buffer.Length == 0)
-                        {
-                            break;
-                        }
+                        var buffer = receiver.Receive(ref clientEndPoint);
+                        Datagram datagram = JsonConvert.DeserializeObject<Datagram>(Encoding.ASCII.GetString(buffer));
+                        fileStream.Write(datagram.Data, 0, datagram.Data.Length);
+                        ecoSystem.LastDownloadedData += datagram.Data.Length;
+                        if(datagram.IsLastDatagramm) break;
+                        
+                    }
 
-                        fileStream.Write(buffer, 0, buffer.Length);
-                        ecoSystem.LastDownloadedData += buffer.Length;
-                        if (buffer.Length < 1024) break;
+                    datagrams.Sort((d1, d2) => d1.SequenceNumber.CompareTo(d2.SequenceNumber));
+                    foreach (var d in datagrams)
+                    {
+                        fileStream.Write(d.Data, 0, d.Data.Length);
+                        ecoSystem.LastDownloadedData += d.Data.Length;
                     }
 
                 }
             }
 
+            receiver.Close();
+            datagrams.Clear();
             ecoSystem.LastUploadedData = 0;
         }
 

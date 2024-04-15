@@ -1,4 +1,5 @@
 ﻿using ShellProgressBar;
+using SPOLKS_NetLib.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,8 @@ namespace SPOLKS_NetLib.Clients
         protected ProgressBarOptions options;
 
         protected IPAddress ip;
+
+        protected List<Datagram> datagrams = new List<Datagram>();
 
         protected int port;
         public AbstractClient()

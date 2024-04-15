@@ -1,4 +1,5 @@
-﻿using SPOLKS_NetLib.Data.Requests;
+﻿using SPOLKS_NetLib.Data;
+using SPOLKS_NetLib.Data.Requests;
 using SPOLKS_NetLib.Parsing;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,8 @@ namespace SPOLKS_NetLib.Severs
     {
         public int Port { get; }
         public IPAddress Address { get; }
+
+        protected List<Datagram> datagrams = new List<Datagram>();
         public class ServerEcoSystem
         {
             public readonly DirectoryInfo storage;
