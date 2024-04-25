@@ -12,11 +12,14 @@ namespace SPOLKS_NetLib.Data.Responces
     {
         [DataMember]
         public string ErrorMessage { get; }
-        
+
+        [DataMember]
+        public ErrorType ErrorType { get; }
         [JsonConstructor]
-        public ErrorResponse(string ErrorMessage) : base(ResponseType.ErrorResponse)
+        public ErrorResponse(string ErrorMessage, ErrorType errorType) : base(ResponseType.ErrorResponse)
         {
             this.ErrorMessage = ErrorMessage;
+            this.ErrorType = errorType;
         }
 
         public override string Serialize()

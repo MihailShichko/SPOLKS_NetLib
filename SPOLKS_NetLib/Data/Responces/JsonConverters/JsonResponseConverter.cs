@@ -35,7 +35,8 @@ namespace SPOLKS_NetLib.Data.Responces.JsonConverters
             else if (responseType == ResponseType.ErrorResponse)
             {
                 var error = jsonObject["ErrorMessage"].Value<string>();
-                return new ErrorResponse(error);
+                var type = jsonObject["ErrorType"].Value<int>();
+                return new ErrorResponse(error, (ErrorType)type);
             }
             else if (responseType == ResponseType.UploadResponse)
             {
@@ -67,6 +68,7 @@ namespace SPOLKS_NetLib.Data.Responces.JsonConverters
             else if(value is ErrorResponse errorResponse)
             {
                 jsonObject.Add("ErrorMessage", errorResponse.ErrorMessage);
+                jsonObject.Add("ErrorType", errorResponse.ErrorType.ToString());
             }
             else if(value is UploadResponse uploadResponse)
             {

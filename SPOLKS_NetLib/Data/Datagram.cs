@@ -11,7 +11,6 @@ namespace SPOLKS_NetLib.Data
     {
         public int SequenceNumber { get; set; }
         public byte[] Data { get; set; }
-        
         public bool IsLastDatagramm { get; set; }
 
         public Datagram(byte[] data, int sequenceNaumber, bool isLastDatagramm)

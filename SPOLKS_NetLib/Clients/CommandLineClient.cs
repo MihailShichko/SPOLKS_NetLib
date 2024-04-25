@@ -33,13 +33,16 @@ namespace SPOLKS_NetLib.Clients
             var writer = new StreamWriter(client.GetStream());
             writer.AutoFlush = true;
             var reader = new StreamReader(client.GetStream());
-
+            var settings = new JsonSerializerSettings();
+            settings.Converters.Add(new JsonResponseConverter());
+            var connectionStatusSerialized = reader.ReadLine();
+            var connectionStatusDeserialized = JsonConvert.DeserializeObject<Response>(connectionStatusSerialized, settings);
+            ManageResponce(connectionStatusDeserialized);
             while (true)
             {
                 writer.WriteLine(GetRequest().Serialize());
                 var serializedResponse = reader.ReadLine();
-                var settings = new JsonSerializerSettings();
-                settings.Converters.Add(new JsonResponseConverter());
+               
 
                 var response = JsonConvert.DeserializeObject<Response>(serializedResponse, settings);
                 ManageResponce(response);
@@ -67,6 +70,12 @@ namespace SPOLKS_NetLib.Clients
             }
             else if(response is ErrorResponse errorResponse)
             {
+                if(errorResponse.ErrorType == ErrorType.FullServer)
+                {
+                    this.client.Close();
+                    throw new Exception(errorResponse.ErrorMessage);
+                }
+
                 Console.WriteLine(errorResponse.ErrorMessage);
             }
             else if(response is UploadResponse uploadResponse)
@@ -223,7 +232,7 @@ namespace SPOLKS_NetLib.Clients
                 int pollingTimeoutMilliSec = 5000;
                 using (var progressBar = new ProgressBar((int)fileSize, "Progress", options))
                 {
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[8192];
                     int totalBytes = uploadResponse.Position;
                     int bytesRead;
                     int sequeneceNumber = 1;
